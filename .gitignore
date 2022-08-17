@@ -1,5 +1,8 @@
 .stack-work/
 *~
 
+# server config file
+config.ini
 
-env.ini
+# debug logs
+phoityne.log
