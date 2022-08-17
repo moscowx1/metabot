@@ -36,6 +36,7 @@ library
   build-depends:
       base >=4.7 && <5
     , either
+    , hspec
     , ini
     , text
     , transformers
@@ -51,6 +52,7 @@ executable metabot-exe
   build-depends:
       base >=4.7 && <5
     , either
+    , hspec
     , ini
     , metabot
     , text
@@ -61,6 +63,8 @@ test-suite metabot-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Bot.ConfigSpec
+      Bot.DataSpec
       Paths_metabot
   hs-source-dirs:
       test
@@ -68,6 +72,7 @@ test-suite metabot-test
   build-depends:
       base >=4.7 && <5
     , either
+    , hspec
     , ini
     , metabot
     , text
