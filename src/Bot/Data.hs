@@ -35,7 +35,7 @@ type RepeatCount = Int
 readRepeatCount :: T.Text -> Either T.Text RepeatCount
 readRepeatCount t = do
   t' <- readEither' t
-  if t' < 0 || t' > 5
+  if t' <= 0 || t' > 5
     then Left "repeat count should be less then zero or more than five"
     else Right t'
 
