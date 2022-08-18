@@ -7,6 +7,8 @@ import Bot.Config
     lookupPort,
     lookupRepeatCount,
     lookupRepeatMessage,
+    lookupServerConfig,
+    ServerConfig(..)
   )
 import Data.Either.Combinators (isLeft, mapLeft)
 import Data.Ini (parseIni)
@@ -74,3 +76,15 @@ spec =
       let ini = mapLeft T.pack $ parseIni "[Bobo]\nRepeatCount: 123\n"
       let repeatCount = ini >>= lookupRepeatCount
       repeatCount `shouldSatisfy` isLeft
+
+    it "should read correct config" $ do
+      let txt = "[Server]\nPort: 3000\n [Bot]\nHelpMessage: plsHelp\nRepeatMessage: +rep\nRepeatCount: 4\n"
+      let config = mapLeft T.pack (parseIni txt) >>= lookupServerConfig
+      let expectedConfig =
+            ServerConfig
+              { sPort = 3000,
+                sHelpMessage = "plsHelp",
+                sRepeatMessage = "+rep",
+                sRepeatCount = 4
+              }
+      config `shouldBe` pure expectedConfig

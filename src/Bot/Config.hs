@@ -7,7 +7,8 @@ module Bot.Config
     lookupRepeatMessage,
     lookupHelpMessage,
     lookupPort,
-    lookupBotSection,
+    lookupServerConfig,
+    ServerConfig (..),
   )
 where
 
