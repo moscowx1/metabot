@@ -28,7 +28,6 @@ library
       Bot.Config
       Bot.Data
       Lib
-      Tmp
   other-modules:
       Paths_metabot
   hs-source-dirs:
