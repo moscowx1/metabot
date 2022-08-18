@@ -1,6 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.Config (readConfig) where
+module Bot.Config
+  ( readConfig,
+    -- for testing
+    lookupRepeatCount,
+    lookupRepeatMessage,
+    lookupHelpMessage,
+    lookupPort,
+    lookupBotSection,
+  )
+where
 
 import Bot.Data
   ( HelpMessage,
