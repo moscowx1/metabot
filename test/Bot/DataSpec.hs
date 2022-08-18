@@ -2,7 +2,7 @@
 
 module Bot.DataSpec (spec) where
 
-import Bot.Data (readHelpMessage, readPort, readRepeatCount, readRepeatMessage)
+import Bot.Data (readHelpMessage, readPort, readRepeatCount, readRepeatMessage, readToken)
 import Data.Either (isLeft)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
@@ -44,3 +44,9 @@ spec =
 
     it "should return left on empty repeat message" $ do
       readRepeatMessage "" `shouldSatisfy` isLeft
+
+    it "should read token" $ do
+      readToken "asdfawdf" `shouldBe` pure "asdfawdf"
+
+    it "shoud return left on empty token" $ do
+      readToken "" `shouldSatisfy` isLeft

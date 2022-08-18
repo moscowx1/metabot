@@ -8,6 +8,7 @@ module Bot.Config
     lookupHelpMessage,
     lookupPort,
     lookupServerConfig,
+    lookupToken,
     ServerConfig (..),
   )
 where
@@ -17,10 +18,12 @@ import Bot.Data
     Port,
     RepeatCount,
     RepeatMessage,
+    Token,
     readHelpMessage,
     readPort,
     readRepeatCount,
     readRepeatMessage,
+    readToken,
   )
 import Data.Either.Combinators (mapLeft)
 import Data.Ini (Ini, lookupValue, readIniFile)
@@ -32,7 +35,8 @@ data ServerConfig = ServerConfig
   { sPort :: Int,
     sHelpMessage :: NonEmptyText,
     sRepeatMessage :: NonEmptyText,
-    sRepeatCount :: Int
+    sRepeatCount :: Int,
+    sToken :: NonEmptyText
   }
   deriving (Show, Eq)
 
@@ -59,18 +63,23 @@ lookupRepeatMessage = lookupBotSection "RepeatMessage" readRepeatMessage
 lookupRepeatCount :: Ini -> Either T.Text RepeatCount
 lookupRepeatCount = lookupBotSection "RepeatCount" readRepeatCount
 
+lookupToken :: Ini -> Either T.Text Token
+lookupToken = lookupBotSection "Token" readToken
+
 lookupServerConfig :: Ini -> Either T.Text ServerConfig
 lookupServerConfig ini = do
   port <- lookupPort ini
   helpMsg <- lookupHelpMessage ini
   repeatMsg <- lookupRepeatMessage ini
   repeatCount <- lookupRepeatCount ini
+  token <- lookupToken ini
   pure $
     ServerConfig
       { sPort = port,
         sHelpMessage = helpMsg,
         sRepeatMessage = repeatMsg,
-        sRepeatCount = repeatCount
+        sRepeatCount = repeatCount,
+        sToken = token
       }
 
 readIniFileT :: FilePath -> IO (Either T.Text Ini)

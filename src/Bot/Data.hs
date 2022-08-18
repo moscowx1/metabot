@@ -5,10 +5,12 @@ module Bot.Data
     readRepeatMessage,
     readHelpMessage,
     readRepeatCount,
+    readToken,
     Port,
     RepeatMessage,
     HelpMessage,
     RepeatCount,
+    Token
   )
 where
 
@@ -52,3 +54,8 @@ readPort t = do
   if t' < 50 || t' > 10000
     then Left "port should be less then 50 or more then 10k"
     else Right t'
+
+type Token = T.Text
+
+readToken :: T.Text -> Either T.Text Token
+readToken = readNonEmpty "token cannot be empty"
