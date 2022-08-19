@@ -9,50 +9,59 @@ module Bot.Config
     lookupPort,
     lookupServerConfig,
     lookupToken,
+    lookupTimeout,
+    lookupOffset,
     ServerConfig (..),
   )
 where
 
 import Bot.Data
   ( HelpMessage,
+    Offset,
     Port,
     RepeatCount,
     RepeatMessage,
+    Timeout,
     Token,
     readHelpMessage,
+    readInitOffset,
     readPort,
     readRepeatCount,
     readRepeatMessage,
+    readTimeout,
     readToken,
   )
 import Data.Either.Combinators (mapLeft)
 import Data.Ini (Ini, lookupValue, readIniFile)
 import qualified Data.Text as T
 
-type NonEmptyText = T.Text
-
 data ServerConfig = ServerConfig
-  { sPort :: Int,
-    sHelpMessage :: NonEmptyText,
-    sRepeatMessage :: NonEmptyText,
-    sRepeatCount :: Int,
-    sToken :: NonEmptyText
+  { sPort :: Port,
+    sHelpMessage :: HelpMessage,
+    sRepeatMessage :: RepeatMessage,
+    sRepeatCount :: RepeatCount,
+    sToken :: Token,
+    sTimeout :: Int,
+    sInitialOffset :: Offset
   }
   deriving (Show, Eq)
 
-lookupValueT ::
-  T.Text ->
-  T.Text ->
+lookupText :: T.Text -> T.Text -> Ini -> Either T.Text T.Text
+lookupText sec val ini = mapLeft T.pack (lookupValue sec val ini)
+
+lookupData ::
+  T.Text -> -- Section
+  T.Text -> -- Key
   (T.Text -> Either T.Text a) ->
   Ini ->
   Either T.Text a
-lookupValueT sec val fn ini = mapLeft T.pack (lookupValue sec val ini) >>= fn
+lookupData sec val fn ini = lookupText sec val ini >>= fn
 
 lookupPort :: Ini -> Either T.Text Port
-lookupPort = lookupValueT "Server" "Port" readPort
+lookupPort = lookupData "Server" "Port" readPort
 
 lookupBotSection :: T.Text -> (T.Text -> Either T.Text a) -> Ini -> Either T.Text a
-lookupBotSection = lookupValueT "Bot"
+lookupBotSection = lookupData "Bot"
 
 lookupHelpMessage :: Ini -> Either T.Text HelpMessage
 lookupHelpMessage = lookupBotSection "HelpMessage" readHelpMessage
@@ -66,6 +75,16 @@ lookupRepeatCount = lookupBotSection "RepeatCount" readRepeatCount
 lookupToken :: Ini -> Either T.Text Token
 lookupToken = lookupBotSection "Token" readToken
 
+lookupTimeout :: Ini -> Either T.Text Timeout
+lookupTimeout = lookupBotSection "Timeout" readTimeout
+
+lookupOffset :: Ini -> Either T.Text Offset
+lookupOffset ini = case text of
+  Nothing -> pure Nothing
+  Just t -> readInitOffset t
+  where
+    text = either (const Nothing) Just $ lookupText "Bot" "InitOffset" ini
+
 lookupServerConfig :: Ini -> Either T.Text ServerConfig
 lookupServerConfig ini = do
   port <- lookupPort ini
@@ -73,13 +92,17 @@ lookupServerConfig ini = do
   repeatMsg <- lookupRepeatMessage ini
   repeatCount <- lookupRepeatCount ini
   token <- lookupToken ini
+  timeout <- lookupTimeout ini
+  offset <- lookupOffset ini
   pure $
     ServerConfig
       { sPort = port,
         sHelpMessage = helpMsg,
         sRepeatMessage = repeatMsg,
         sRepeatCount = repeatCount,
-        sToken = token
+        sToken = token,
+        sTimeout = timeout,
+        sInitialOffset = offset
       }
 
 readIniFileT :: FilePath -> IO (Either T.Text Ini)

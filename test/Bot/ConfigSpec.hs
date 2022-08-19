@@ -9,6 +9,7 @@ import Bot.Config
     lookupRepeatCount,
     lookupRepeatMessage,
     lookupServerConfig,
+    lookupTimeout,
     lookupToken,
   )
 import Data.Either.Combinators (isLeft, mapLeft)
@@ -93,13 +94,31 @@ spec =
       let token = ini >>= lookupToken
       token `shouldSatisfy` isLeft
 
+    it "should read timeout" $ do
+      let ini = mapLeft pack $ parseIni "[Bot]\nTimeout: 30\n"
+      let timeout = ini >>= lookupTimeout
+      timeout `shouldBe` pure 30
+
+    it "should return left while reading ini without timeout key" $ do
+      let ini = mapLeft pack $ parseIni "[Bot]\nzxcvf: asdfg\n"
+      let timeout = ini >>= lookupTimeout
+      timeout `shouldSatisfy` isLeft
+
+    it "should return left while reading ini without bot section" $ do
+      let ini = mapLeft pack $ parseIni "[Bobo]\nRepeatCount: 123\n"
+      let timeout = ini >>= lookupTimeout
+      timeout `shouldSatisfy` isLeft
+
     it "should read correct config" $ do
       let txt =
             "[Server]\nPort: 3000\n\
             \[Bot]\nHelpMessage: plsHelp\n\
             \RepeatMessage: +rep\n\
             \RepeatCount: 4\n\
-            \Token: asvzxcv"
+            \Token: asvzxcv\n\
+            \Timeout: 30\n\
+            \InitOffset: 12"
+
       let config = mapLeft pack (parseIni txt) >>= lookupServerConfig
       let expectedConfig =
             ServerConfig
@@ -107,6 +126,8 @@ spec =
                 sHelpMessage = "plsHelp",
                 sRepeatMessage = "+rep",
                 sRepeatCount = 4,
-                sToken = "asvzxcv"
+                sToken = "asvzxcv",
+                sTimeout = 30,
+                sInitialOffset = Just 12
               }
       config `shouldBe` pure expectedConfig

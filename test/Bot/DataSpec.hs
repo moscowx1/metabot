@@ -2,7 +2,7 @@
 
 module Bot.DataSpec (spec) where
 
-import Bot.Data (readHelpMessage, readPort, readRepeatCount, readRepeatMessage, readToken)
+import Bot.Data (readHelpMessage, readInitOffset, readPort, readRepeatCount, readRepeatMessage, readTimeout, readToken)
 import Data.Either (isLeft)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
@@ -48,5 +48,23 @@ spec =
     it "should read token" $ do
       readToken "asdfawdf" `shouldBe` pure "asdfawdf"
 
-    it "shoud return left on empty token" $ do
+    it "should return left on empty token" $ do
       readToken "" `shouldSatisfy` isLeft
+
+    it "should read timeout" $ do
+      readTimeout "333" `shouldBe` pure 333
+
+    it "should return left on small timeout" $ do
+      readTimeout "-123" `shouldSatisfy` isLeft
+
+    it "should return left on too big timeout" $ do
+      readTimeout "123123123123123" `shouldSatisfy` isLeft
+
+    it "should read empty offset" $ do
+      readInitOffset "" `shouldBe` pure Nothing
+
+    it "should read non empty offset" $ do
+      readInitOffset "123123" `shouldBe` (pure . pure) 123123
+
+    it "should return left on negative offset" $ do
+      readInitOffset "-123" `shouldSatisfy` isLeft

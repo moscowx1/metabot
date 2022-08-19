@@ -6,11 +6,15 @@ module Bot.Data
     readHelpMessage,
     readRepeatCount,
     readToken,
+    readInitOffset,
+    readTimeout,
     Port,
     RepeatMessage,
     HelpMessage,
     RepeatCount,
-    Token
+    Token,
+    Offset,
+    Timeout,
   )
 where
 
@@ -38,7 +42,7 @@ readRepeatCount :: T.Text -> Either T.Text RepeatCount
 readRepeatCount t = do
   t' <- readEither' t
   if t' <= 0 || t' > 5
-    then Left "repeat count should be less then zero or more than five"
+    then Left "repeat count should be between 1 and 5"
     else Right t'
 
 type HelpMessage = T.Text
@@ -50,12 +54,33 @@ type Port = Int
 
 readPort :: T.Text -> Either T.Text Port
 readPort t = do
-  t' <- readEither' t
-  if t' < 50 || t' > 10000
-    then Left "port should be less then 50 or more then 10k"
-    else Right t'
+  port <- readEither' t
+  if port < 50 || port > 10000
+    then Left "port should be between 50 and 10000"
+    else Right port
 
 type Token = T.Text
 
 readToken :: T.Text -> Either T.Text Token
 readToken = readNonEmpty "token cannot be empty"
+
+type Timeout = Int
+
+readTimeout :: T.Text -> Either T.Text Timeout
+readTimeout t = do
+  timeout <- readEither' t
+  if timeout < 9 || timeout > 1000
+    then Left "timeout shoudl be between 10 and 1000"
+    else Right timeout
+
+type Offset = Maybe Int
+
+readInitOffset :: T.Text -> Either T.Text Offset
+readInitOffset t = do
+  if T.null t
+    then pure Nothing
+    else do
+      offset <- readEither' t
+      if offset <= 0
+        then Left "offset shoudl be more than zero"
+        else Right $ Just offset
