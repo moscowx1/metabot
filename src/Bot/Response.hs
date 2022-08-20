@@ -6,9 +6,11 @@ module Bot.Response
     From (..),
     Message (..),
     Update (..),
+    SendMessageResponse (..),
   )
 where
 
+import Control.Applicative ((<|>))
 import Control.Monad (mzero)
 import Data.Aeson (FromJSON, Value (Object), (.:))
 import Data.Aeson.Types (parseJSON)
@@ -88,4 +90,18 @@ instance FromJSON Chat where
       <*> chat .: "first_name"
       <*> chat .: "username"
       <*> chat .: "type"
+  parseJSON _ = mzero
+
+data SendMessageResponse = SendMessageResponse
+  { smrOk :: Bool,
+    smrErrorCode :: Maybe Int,
+    smrDescription :: Maybe T.Text
+  }
+  deriving (Show, Eq)
+
+instance FromJSON SendMessageResponse where
+  parseJSON (Object req) =
+    SendMessageResponse <$> req .: "ok"
+      <*> (req .: "error_code" <|> pure Nothing)
+      <*> (req .: "description" <|> pure Nothing)
   parseJSON _ = mzero
