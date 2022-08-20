@@ -26,6 +26,12 @@ dependencies:
 - either
 - transformers
 - hspec
+- aeson
+- http-client
+- http-client-tls
+- http-conduit
+- http-types
+- bytestring
 
 ghc-options:
 - -Wall

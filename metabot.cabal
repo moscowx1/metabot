@@ -27,6 +27,7 @@ library
   exposed-modules:
       Bot.Config
       Bot.Data
+      Bot.Response
       Lib
   other-modules:
       Paths_metabot
@@ -34,9 +35,15 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , either
     , hspec
+    , http-client
+    , http-client-tls
+    , http-conduit
+    , http-types
     , ini
     , text
     , transformers
@@ -50,9 +57,15 @@ executable metabot-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , either
     , hspec
+    , http-client
+    , http-client-tls
+    , http-conduit
+    , http-types
     , ini
     , metabot
     , text
@@ -65,14 +78,21 @@ test-suite metabot-test
   other-modules:
       Bot.ConfigSpec
       Bot.DataSpec
+      Bot.ResponseSpec
       Paths_metabot
   hs-source-dirs:
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      aeson
+    , base >=4.7 && <5
+    , bytestring
     , either
     , hspec
+    , http-client
+    , http-client-tls
+    , http-conduit
+    , http-types
     , ini
     , metabot
     , text
