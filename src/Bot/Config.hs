@@ -41,8 +41,8 @@ data ServerConfig = ServerConfig
     sRepeatMessage :: RepeatMessage,
     sRepeatCount :: RepeatCount,
     sToken :: Token,
-    sTimeout :: Int,
-    sInitialOffset :: Offset
+    sTimeout :: Timeout,
+    sInitialOffset :: Maybe Offset
   }
   deriving (Show, Eq)
 
@@ -78,7 +78,7 @@ lookupToken = lookupBotSection "Token" readToken
 lookupTimeout :: Ini -> Either T.Text Timeout
 lookupTimeout = lookupBotSection "Timeout" readTimeout
 
-lookupOffset :: Ini -> Either T.Text Offset
+lookupOffset :: Ini -> Either T.Text (Maybe Offset)
 lookupOffset ini = case text of
   Nothing -> pure Nothing
   Just t -> readInitOffset t

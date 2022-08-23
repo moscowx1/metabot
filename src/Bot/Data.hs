@@ -73,9 +73,9 @@ readTimeout t = do
     then Left "timeout shoudl be between 10 and 1000"
     else Right timeout
 
-type Offset = Maybe Int
+type Offset = Int
 
-readInitOffset :: T.Text -> Either T.Text Offset
+readInitOffset :: T.Text -> Either T.Text (Maybe Offset)
 readInitOffset t = do
   if T.null t
     then pure Nothing
