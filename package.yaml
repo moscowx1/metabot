@@ -28,9 +28,8 @@ dependencies:
 - hspec
 - aeson
 - http-client
-- http-client-tls
 - http-conduit
-- http-types
+- utf8-string
 - bytestring
 
 ghc-options:
