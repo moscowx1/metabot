@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.Api2 (sendMessage, getUpdates) where
+module Bot.Api (sendMessage, getUpdates) where
 
 import Bot.Config (ServerConfig (ServerConfig, sTimeout, sToken))
 import Bot.Data (Offset, RepeatCount, Token)
