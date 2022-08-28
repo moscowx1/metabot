@@ -29,6 +29,7 @@ library
       Bot.Config
       Bot.Data
       Bot.Response
+      Bot.Tmp
       Lib
   other-modules:
       Paths_metabot

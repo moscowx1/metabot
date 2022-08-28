@@ -1,14 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Bot.Data
-  ( readPort,
-    readRepeatMessage,
+  ( readRepeatMessage,
     readHelpMessage,
     readRepeatCount,
     readToken,
     readInitOffset,
     readTimeout,
-    Port,
     RepeatMessage,
     HelpMessage,
     RepeatCount,
@@ -49,15 +47,6 @@ type HelpMessage = T.Text
 
 readHelpMessage :: T.Text -> Either T.Text HelpMessage
 readHelpMessage = readNonEmpty "help message cannot be empty"
-
-type Port = Int
-
-readPort :: T.Text -> Either T.Text Port
-readPort t = do
-  port <- readEither' t
-  if port < 50 || port > 10000
-    then Left "port should be between 50 and 10000"
-    else Right port
 
 type Token = T.Text
 
