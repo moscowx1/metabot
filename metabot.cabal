@@ -26,10 +26,9 @@ source-repository head
 library
   exposed-modules:
       Bot.Api
-      Bot.Config
-      Bot.Data
       Bot.Response
-      Bot.Tmp
+      Data
+      Data.Internal
       Lib
   other-modules:
       Paths_metabot
@@ -76,7 +75,7 @@ test-suite metabot-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Bot.ConfigSpec
+      Bot.DataParsingSpec
       Bot.DataSpec
       Bot.ResponseSpec
       Paths_metabot

@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.ConfigSpec (spec) where
+module Bot.DataParsingSpec (spec) where
 
-import Bot.Config
+import Data.Either.Combinators (isLeft, mapLeft)
+import Data.Ini (parseIni)
+import Data.Internal
   ( ServerConfig (..),
     lookupHelpMessage,
     lookupRepeatCount,
@@ -11,8 +13,6 @@ import Bot.Config
     lookupTimeout,
     lookupToken,
   )
-import Data.Either.Combinators (isLeft, mapLeft)
-import Data.Ini (parseIni)
 import Data.Text (pack)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 

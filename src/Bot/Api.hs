@@ -2,10 +2,9 @@
 
 module Bot.Api (sendMessage, getUpdates) where
 
-import Bot.Config (ServerConfig (ServerConfig, sTimeout, sToken))
-import Bot.Data (Offset, RepeatCount, Token)
 import Bot.Response (SendMessageResponse, UpdateResponse)
 import Control.Exception (try)
+import qualified Data as D
 import Data.Aeson (FromJSON, eitherDecode)
 import qualified Data.ByteString.Lazy.Char8 as BLC8
 import qualified Data.ByteString.UTF8 as BS8
@@ -14,23 +13,11 @@ import Network.HTTP.Client (HttpException, Request)
 import qualified Network.HTTP.Client as HC
 import qualified Network.HTTP.Simple as HS
 
-type ChatId = Int
-
-data ServerState = ServerState
-  { ssOffset :: Maybe Offset,
-    ssChatRepeatCount :: [(ChatId, RepeatCount)]
-  }
-
 data Method = POST | GET
   deriving (Eq, Show)
 
 toBS8 :: Show a => a -> BS8.ByteString
 toBS8 = BS8.fromString . show
-
-data Handle = Handle
-  { hConfig :: ServerConfig,
-    hState :: ServerState
-  }
 
 requestBase :: Request
 requestBase =
@@ -38,32 +25,32 @@ requestBase =
     HS.setRequestHost "api.telegram.org" $
       HS.setRequestSecure True HS.defaultRequest
 
-pathBase :: Handle -> BS8.ByteString
-pathBase h = "/bot" <> (encodeUtf8 . sToken . hConfig) h
+pathBase :: D.Handle -> BS8.ByteString
+pathBase h = "/bot" <> (encodeUtf8 . D.sToken . D.hConfig) h
 
-updateQuery :: Handle -> HS.Query
+updateQuery :: D.Handle -> HS.Query
 updateQuery h =
   [ ("timeout", toBS8 <$> Just timeout),
     ("offset", toBS8 <$> Just offset)
   ]
   where
-    offset = (ssOffset . hState) h
-    timeout = (sTimeout . hConfig) h
+    offset = (D.ssOffset . D.hState) h
+    timeout = (D.sTimeout . D.hConfig) h
 
-updatesRequest :: Handle -> Request
+updatesRequest :: D.Handle -> Request
 updatesRequest h =
   HS.setRequestPath path $
     HC.setQueryString (updateQuery h) requestBase
   where
     path = pathBase h <> "/getUpdates"
 
-sendMessageQuery :: ChatId -> String -> HS.Query
+sendMessageQuery :: D.ChatId -> String -> HS.Query
 sendMessageQuery chatId msg =
   [ ("text", toBS8 <$> Just msg),
     ("chat_id", toBS8 <$> Just chatId)
   ]
 
-sendMessageRequest :: Handle -> ChatId -> String -> Request
+sendMessageRequest :: D.Handle -> D.ChatId -> String -> Request
 sendMessageRequest handle chatId message =
   HS.setRequestPath path $
     HC.setQueryString query requestBase
@@ -104,12 +91,12 @@ getResponse req = do
     Left err -> Left err
     Right body -> eitherDecode body
 
-getUpdates :: Handle -> IO (Either String UpdateResponse)
+getUpdates :: D.Handle -> IO (Either String UpdateResponse)
 getUpdates h = getResponse (updatesRequest h)
 
 sendMessage ::
-  Handle ->
-  ChatId ->
+  D.Handle ->
+  D.ChatId ->
   String ->
   IO (Either String SendMessageResponse)
 sendMessage handle chatId msg = getResponse req

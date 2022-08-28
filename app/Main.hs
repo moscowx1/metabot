@@ -1,6 +1,4 @@
 module Main (main) where
 
-import Bot.Config (readConfig)
-
 main :: IO ()
-main = readConfig >>= print
+main = putStrLn "oh hi mark"

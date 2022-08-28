@@ -2,25 +2,20 @@
 
 module Bot.DataSpec (spec) where
 
-import Bot.Data (readHelpMessage, readInitOffset, readPort, readRepeatCount, readRepeatMessage, readTimeout, readToken)
 import Data.Either (isLeft)
+import Data.Internal
+  ( readHelpMessage,
+    readInitOffset,
+    readRepeatCount,
+    readRepeatMessage,
+    readTimeout,
+    readToken,
+  )
 import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 
 spec :: Spec
 spec =
   describe "testing bot data reading" $ do
-    it "should read port" $ do
-      readPort "3030" `shouldBe` pure 3030
-
-    it "should return left on invalid port" $ do
-      readPort "as123" `shouldSatisfy` isLeft
-
-    it "should return left on too big port" $ do
-      readPort "1000000" `shouldSatisfy` isLeft
-
-    it "should return left on too small port" $ do
-      readPort "0" `shouldSatisfy` isLeft
-
     it "should read repeat count" $ do
       readRepeatCount "3" `shouldBe` pure 3
 
