@@ -6,7 +6,6 @@ module Bot.Config
     lookupRepeatCount,
     lookupRepeatMessage,
     lookupHelpMessage,
-    lookupPort,
     lookupServerConfig,
     lookupToken,
     lookupTimeout,
@@ -36,8 +35,7 @@ import Data.Ini (Ini, lookupValue, readIniFile)
 import qualified Data.Text as T
 
 data ServerConfig = ServerConfig
-  { sPort :: Port,
-    sHelpMessage :: HelpMessage,
+  { sHelpMessage :: HelpMessage,
     sRepeatMessage :: RepeatMessage,
     sRepeatCount :: RepeatCount,
     sToken :: Token,
@@ -56,9 +54,6 @@ lookupData ::
   Ini ->
   Either T.Text a
 lookupData sec val fn ini = lookupText sec val ini >>= fn
-
-lookupPort :: Ini -> Either T.Text Port
-lookupPort = lookupData "Server" "Port" readPort
 
 lookupBotSection :: T.Text -> (T.Text -> Either T.Text a) -> Ini -> Either T.Text a
 lookupBotSection = lookupData "Bot"
@@ -87,7 +82,6 @@ lookupOffset ini = case text of
 
 lookupServerConfig :: Ini -> Either T.Text ServerConfig
 lookupServerConfig ini = do
-  port <- lookupPort ini
   helpMsg <- lookupHelpMessage ini
   repeatMsg <- lookupRepeatMessage ini
   repeatCount <- lookupRepeatCount ini
@@ -96,8 +90,7 @@ lookupServerConfig ini = do
   offset <- lookupOffset ini
   pure $
     ServerConfig
-      { sPort = port,
-        sHelpMessage = helpMsg,
+      { sHelpMessage = helpMsg,
         sRepeatMessage = repeatMsg,
         sRepeatCount = repeatCount,
         sToken = token,

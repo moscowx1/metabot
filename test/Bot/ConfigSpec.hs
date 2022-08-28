@@ -5,7 +5,6 @@ module Bot.ConfigSpec (spec) where
 import Bot.Config
   ( ServerConfig (..),
     lookupHelpMessage,
-    lookupPort,
     lookupRepeatCount,
     lookupRepeatMessage,
     lookupServerConfig,
@@ -20,21 +19,6 @@ import Test.Hspec (Spec, describe, it, shouldBe, shouldSatisfy)
 spec :: Spec
 spec =
   describe "reading config file test" $ do
-    it "should read port" $ do
-      let ini = mapLeft pack $ parseIni "[Server]\nPort: 6667\n"
-      let port = ini >>= lookupPort
-      port `shouldBe` pure 6667
-
-    it "should return left while reading ini without server section" $ do
-      let ini = mapLeft pack $ parseIni "[Sever]\nPort: 6667\n"
-      let port = ini >>= lookupPort
-      port `shouldSatisfy` isLeft
-
-    it "should return left while reading ini without port key" $ do
-      let ini = mapLeft pack $ parseIni "[Server]\nasdgf: 6667\n"
-      let port = ini >>= lookupPort
-      port `shouldSatisfy` isLeft
-
     it "should read helpMessage" $ do
       let ini = mapLeft pack $ parseIni "[Bot]\nHelpMessage: baba\n"
       let helpMessage = ini >>= lookupHelpMessage
@@ -111,8 +95,7 @@ spec =
 
     it "should read correct config" $ do
       let txt =
-            "[Server]\nPort: 3000\n\
-            \[Bot]\nHelpMessage: plsHelp\n\
+            "[Bot]\nHelpMessage: plsHelp\n\
             \RepeatMessage: +rep\n\
             \RepeatCount: 4\n\
             \Token: asvzxcv\n\
@@ -122,8 +105,7 @@ spec =
       let config = mapLeft pack (parseIni txt) >>= lookupServerConfig
       let expectedConfig =
             ServerConfig
-              { sPort = 3000,
-                sHelpMessage = "plsHelp",
+              { sHelpMessage = "plsHelp",
                 sRepeatMessage = "+rep",
                 sRepeatCount = 4,
                 sToken = "asvzxcv",
