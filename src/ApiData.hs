@@ -1,51 +1,41 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.Response
-  ( UpdateResponse (..),
-    Chat (..),
-    From (..),
-    Message (..),
-    Update (..),
-    SendMessageResponse (..),
-  )
-where
+module ApiData where
 
 import Control.Applicative ((<|>))
 import Control.Monad (mzero)
-import Data.Aeson (FromJSON, Value (Object), (.:))
-import Data.Aeson.Types (parseJSON)
-import qualified Data.Text as T
+import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
+import GHC.Generics (Generic)
 
-data UpdateResponse = UpdateResponse
+data Updates = Updates
   { ok :: Bool,
     result :: [Update]
   }
-  deriving (Show, Eq)
-
-instance FromJSON UpdateResponse where
-  parseJSON (Object res) =
-    UpdateResponse <$> res .: "ok"
-      <*> res .: "result"
-  parseJSON _ = mzero
+  deriving (Generic, FromJSON, Show)
 
 data Update = Update
-  { uUpdateId :: Integer,
-    uMessage :: Message
+  { updateId :: Int,
+    updateMessage :: Message
   }
-  deriving (Show, Eq)
+  deriving (Show)
 
 instance FromJSON Update where
   parseJSON (Object update) =
-    Update <$> update .: "update_id"
-      <*> update .: "message"
+    Update
+      <$> update
+      .: "update_id"
+      <*> update
+      .: "message"
   parseJSON _ = mzero
 
 data Message = Message
-  { mMessageId :: Integer,
-    mFrom :: From,
-    mChat :: Chat,
-    mDate :: Integer,
-    mText :: T.Text
+  { messageId :: Int,
+    messageFrom :: From,
+    messageChat :: Chat,
+    messageDate :: Int,
+    messageText :: String
   }
   deriving (Show, Eq)
 
@@ -59,11 +49,11 @@ instance FromJSON Message where
   parseJSON _ = mzero
 
 data From = From
-  { fId :: Integer,
-    fIsBot :: Bool,
-    fFirstName :: T.Text,
-    fUsername :: T.Text,
-    fLanguageCode :: T.Text
+  { fromId :: Int,
+    fromIsBot :: Bool,
+    fromFirstName :: String,
+    fromLastName :: String,
+    fromLanguageCode :: String
   }
   deriving (Show, Eq)
 
@@ -77,10 +67,10 @@ instance FromJSON From where
   parseJSON _ = mzero
 
 data Chat = Chat
-  { cId :: Integer,
-    cFirstName :: T.Text,
-    cUsername :: T.Text,
-    cType :: T.Text
+  { chatId :: Int,
+    chatFirstName :: String,
+    chatUserName :: String,
+    chatType :: String
   }
   deriving (Show, Eq)
 
@@ -92,16 +82,16 @@ instance FromJSON Chat where
       <*> chat .: "type"
   parseJSON _ = mzero
 
-data SendMessageResponse = SendMessageResponse
-  { smrOk :: Bool,
-    smrErrorCode :: Maybe Int,
-    smrDescription :: Maybe T.Text
+data MessageResponse = MessageResponse
+  { mrOk :: Bool,
+    mrErrorCode :: Maybe Int,
+    mrDecription :: Maybe String
   }
   deriving (Show, Eq)
 
-instance FromJSON SendMessageResponse where
+instance FromJSON MessageResponse where
   parseJSON (Object req) =
-    SendMessageResponse <$> req .: "ok"
+    MessageResponse <$> req .: "ok"
       <*> (req .: "error_code" <|> pure Nothing)
       <*> (req .: "description" <|> pure Nothing)
   parseJSON _ = mzero

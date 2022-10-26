@@ -25,11 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      Bot.Api
-      Bot.Response
-      Data
-      Data.Internal
-      Lib
+      Api
+      ApiData
+      Config
+      Core
   other-modules:
       Paths_metabot
   hs-source-dirs:
@@ -42,8 +41,13 @@ library
     , either
     , hspec
     , http-client
+    , http-client-tls
     , http-conduit
     , ini
+    , lens
+    , mtl
+    , servant
+    , servant-client
     , text
     , transformers
     , utf8-string
@@ -63,9 +67,14 @@ executable metabot-exe
     , either
     , hspec
     , http-client
+    , http-client-tls
     , http-conduit
     , ini
+    , lens
     , metabot
+    , mtl
+    , servant
+    , servant-client
     , text
     , transformers
     , utf8-string
@@ -75,9 +84,9 @@ test-suite metabot-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Bot.DataParsingSpec
-      Bot.DataSpec
-      Bot.ResponseSpec
+      DataParsingSpec
+      DataSpec
+      ResponseSpec
       Paths_metabot
   hs-source-dirs:
       test
@@ -89,9 +98,14 @@ test-suite metabot-test
     , either
     , hspec
     , http-client
+    , http-client-tls
     , http-conduit
     , ini
+    , lens
     , metabot
+    , mtl
+    , servant
+    , servant-client
     , text
     , transformers
     , utf8-string

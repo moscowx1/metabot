@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Data.Internal
+module Config
   ( readRepeatMessage,
     readHelpMessage,
     readRepeatCount,
@@ -25,79 +25,82 @@ module Data.Internal
     Offset,
     ChatId,
     Timeout,
+    initHandle,
   )
 where
 
-import Data.Either.Combinators (mapLeft)
+import Data.Either.Combinators (mapRight)
 import Data.Ini (Ini, lookupValue, readIniFile)
-import qualified Data.Text as T
+import Data.Text (Text, unpack)
 import Text.Read (readEither)
 
-readNonEmpty :: T.Text -> T.Text -> Either T.Text T.Text
+readNonEmpty :: String -> String -> Either String String
 readNonEmpty err t =
-  if T.null t
+  if null t
     then Left err
     else Right t
 
-readEither' :: (Read a) => T.Text -> Either T.Text a
-readEither' t = mapLeft T.pack $ readEither $ T.unpack t
+type RepeatMessage = String
 
-type RepeatMessage = T.Text
-
-readRepeatMessage :: T.Text -> Either T.Text RepeatMessage
+readRepeatMessage :: String -> Either String RepeatMessage
 readRepeatMessage = readNonEmpty "repeat message cannot be empty"
 
 type RepeatCount = Int
 
-readRepeatCount :: T.Text -> Either T.Text RepeatCount
+readRepeatCount :: String -> Either String RepeatCount
 readRepeatCount t = do
-  t' <- readEither' t
+  t' <- readEither t
   if t' <= 0 || t' > 5
     then Left "repeat count should be between 1 and 5"
     else Right t'
 
-type HelpMessage = T.Text
+type HelpMessage = String
 
-readHelpMessage :: T.Text -> Either T.Text HelpMessage
+readHelpMessage :: String -> Either String HelpMessage
 readHelpMessage = readNonEmpty "help message cannot be empty"
 
-type Token = T.Text
+type Token = String
 
-readToken :: T.Text -> Either T.Text Token
+readToken :: String -> Either String Token
 readToken = readNonEmpty "token cannot be empty"
 
 type Timeout = Int
 
-readTimeout :: T.Text -> Either T.Text Timeout
+readTimeout :: String -> Either String Timeout
 readTimeout t = do
-  timeout <- readEither' t
+  timeout <- readEither t
   if timeout < 9 || timeout > 1000
     then Left "timeout shoudl be between 10 and 1000"
     else Right timeout
 
 type Offset = Int
 
-readInitOffset :: T.Text -> Either T.Text (Maybe Offset)
+readInitOffset :: String -> Either String (Maybe Offset)
 readInitOffset t = do
-  if T.null t
+  if null t
     then pure Nothing
     else do
-      offset <- readEither' t
+      offset <- readEither t
       if offset <= 0
         then Left "offset shoudl be more than zero"
         else Right $ Just offset
 
-type ChatId = Int
+type ChatId = Integer
 
 data ServerState = ServerState
   { ssOffset :: Maybe Offset,
     ssChatRepeatCount :: [(ChatId, RepeatCount)]
   }
 
-initServerState config =
-  ServerState
-    { ssOffset = sInitialOffset config,
-      ssChatRepeatCount = []
+initHandle :: ServerConfig -> Handle
+initHandle config =
+  Handle
+    { hState =
+        ServerState
+          { ssChatRepeatCount = [],
+            ssOffset = sInitialOffset config
+          },
+      hConfig = config
     }
 
 data ServerConfig = ServerConfig
@@ -110,43 +113,43 @@ data ServerConfig = ServerConfig
   }
   deriving (Show, Eq)
 
-lookupText :: T.Text -> T.Text -> Ini -> Either T.Text T.Text
-lookupText sec val ini = mapLeft T.pack (lookupValue sec val ini)
+lookupText :: Text -> Text -> Ini -> Either String String
+lookupText sec val ini = mapRight unpack (lookupValue sec val ini)
 
 lookupData ::
-  T.Text -> -- Section
-  T.Text -> -- Key
-  (T.Text -> Either T.Text a) ->
+  Text -> -- Section
+  Text -> -- Key
+  (String -> Either String a) ->
   Ini ->
-  Either T.Text a
+  Either String a
 lookupData sec val fn ini = lookupText sec val ini >>= fn
 
-lookupBotSection :: T.Text -> (T.Text -> Either T.Text a) -> Ini -> Either T.Text a
+lookupBotSection :: Text -> (String -> Either String a) -> Ini -> Either String a
 lookupBotSection = lookupData "Bot"
 
-lookupHelpMessage :: Ini -> Either T.Text HelpMessage
+lookupHelpMessage :: Ini -> Either String HelpMessage
 lookupHelpMessage = lookupBotSection "HelpMessage" readHelpMessage
 
-lookupRepeatMessage :: Ini -> Either T.Text RepeatMessage
+lookupRepeatMessage :: Ini -> Either String RepeatMessage
 lookupRepeatMessage = lookupBotSection "RepeatMessage" readRepeatMessage
 
-lookupRepeatCount :: Ini -> Either T.Text RepeatCount
+lookupRepeatCount :: Ini -> Either String RepeatCount
 lookupRepeatCount = lookupBotSection "RepeatCount" readRepeatCount
 
-lookupToken :: Ini -> Either T.Text Token
+lookupToken :: Ini -> Either String Token
 lookupToken = lookupBotSection "Token" readToken
 
-lookupTimeout :: Ini -> Either T.Text Timeout
+lookupTimeout :: Ini -> Either String Timeout
 lookupTimeout = lookupBotSection "Timeout" readTimeout
 
-lookupOffset :: Ini -> Either T.Text (Maybe Offset)
+lookupOffset :: Ini -> Either String (Maybe Offset)
 lookupOffset ini = case text of
   Nothing -> pure Nothing
   Just t -> readInitOffset t
   where
     text = either (const Nothing) Just $ lookupText "Bot" "InitOffset" ini
 
-lookupServerConfig :: Ini -> Either T.Text ServerConfig
+lookupServerConfig :: Ini -> Either String ServerConfig
 lookupServerConfig ini = do
   helpMsg <- lookupHelpMessage ini
   repeatMsg <- lookupRepeatMessage ini
@@ -164,14 +167,9 @@ lookupServerConfig ini = do
         sInitialOffset = offset
       }
 
-readIniFileT :: FilePath -> IO (Either T.Text Ini)
-readIniFileT path = do
-  ini <- readIniFile path
-  pure $ mapLeft T.pack ini
-
-readConfig :: IO (Either T.Text ServerConfig)
+readConfig :: IO (Either String ServerConfig)
 readConfig = do
-  ini <- readIniFileT "config.ini"
+  ini <- readIniFile "config.ini"
   let config = ini >>= lookupServerConfig
   pure config
 

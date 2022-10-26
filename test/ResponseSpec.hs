@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.ResponseSpec (spec) where
+module ResponseSpec (spec) where
 
-import Bot.Response
+import Response
   ( Chat (Chat),
     From (From),
     Message (Message),

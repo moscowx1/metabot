@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.DataParsingSpec (spec) where
+module DataParsingSpec (spec) where
 
 import Data.Either.Combinators (isLeft, mapLeft)
 import Data.Ini (parseIni)

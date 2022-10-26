@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Bot.DataSpec (spec) where
+module DataSpec (spec) where
 
 import Data.Either (isLeft)
 import Data.Internal
