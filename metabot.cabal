@@ -28,8 +28,8 @@ library
       Api
       ApiData
       Config
+      Config.Core
       Config.Data
-      Config.Lookups
       Core
   other-modules:
       Paths_metabot

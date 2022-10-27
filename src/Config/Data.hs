@@ -10,7 +10,7 @@ module Config.Data
     timeoutEither,
     RepeatNum,
     repeatNumEither,
-    Config (..),
+    ParseErr,
   )
 where
 
@@ -89,11 +89,3 @@ timeout v =
 
 timeoutEither :: String -> Either ParseErr Timeout
 timeoutEither = run "timeout" timeout
-
-data Config = Config
-  { cInfo :: Info,
-    cInitRC :: RepeatNum,
-    cToken :: Token,
-    cTimeout :: Timeout
-  }
-  deriving (Show, Eq)
