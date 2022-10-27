@@ -2,7 +2,14 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ApiData where
+module ApiData
+  ( Updates (..),
+    Update (..),
+    MessageResponse (..),
+    Chat (..),
+    Message (..),
+  )
+where
 
 import Control.Applicative ((<|>))
 import Control.Monad (mzero)

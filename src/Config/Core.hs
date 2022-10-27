@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Config.Lookups (readConfigEither, Config (..)) where
+module Config.Core (readConfigEither, Config (..)) where
 
 import Config.Data
   ( Info,

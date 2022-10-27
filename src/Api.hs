@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Api where
+module Api (sendMessage, getUpdates) where
 
 import ApiData (MessageResponse, Updates)
 import Data.Proxy (Proxy (Proxy))
@@ -28,9 +28,6 @@ type SendMessage =
     :> QueryParam' '[Required] "chat_id" Int
     :> QueryParam' '[Required] "text" String
     :> Get '[JSON] MessageResponse
-
-k :: Proxy Api
-k = Proxy
 
 type GetUpdates =
   "getUpdates"

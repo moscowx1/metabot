@@ -30,18 +30,19 @@ data ParseErr
 
 type Parser = ReaderT VarName (Except ParseErr)
 
-throwP ctor = ask >>= throwError . ctor
+throw' :: (VarName -> ParseErr) -> Parser a
+throw' ctor = ask >>= throwError . ctor
 
 nonEmpty' :: String -> Parser (NonEmpty Char)
-nonEmpty' v = maybe (throwP Empty) pure (nonEmpty v)
+nonEmpty' v = maybe (throw' Empty) pure (nonEmpty v)
 
 tryRead :: (Read a) => NonEmpty Char -> Parser a
-tryRead x = maybe (throwP NoParse) pure (readMaybe $ toList x)
+tryRead x = maybe (throw' NoParse) pure (readMaybe $ toList x)
 
 between :: Int -> Int -> Int -> Parser Int
 between min' max' v = do
-  when (min' > v) (throwP TooSmall)
-  when (v > max') (throwP TooBig)
+  when (min' > v) (throw' TooSmall)
+  when (v > max') (throw' TooBig)
   pure v
 
 newtype RepeatNum = RepeatNum {unRepeatNum :: Int}
@@ -54,6 +55,11 @@ repeatNum i =
     >>= between 0 5
     <&> RepeatNum
 
+run ::
+  VarName ->
+  (String -> Parser a) ->
+  String ->
+  Either ParseErr a
 run s p = runExcept . runReaderT (p s)
 
 repeatNumEither :: String -> Either ParseErr RepeatNum
