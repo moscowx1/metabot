@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -28,6 +29,7 @@ data ParseErr
   | TooBig VarName
   | TooSmall VarName
   | NoParse VarName
+  deriving (Show, Eq)
 
 type Parser' = ReaderT VarName (Except ParseErr)
 
@@ -62,7 +64,7 @@ run ::
   VarName ->
   (String -> Parser' a) ->
   Parser a
-run s p = runExcept . runReaderT (p s)
+run v p s = runExcept $ runReaderT (p s) v
 
 repeatNumEither :: Parser RepeatNum
 repeatNumEither = run "repeat number" repeatNum

@@ -24,6 +24,7 @@ import Data.Ini (Ini, lookupValue)
 import Data.Text (Text, unpack)
 
 data ReadConfigErr = ParseErr ParseErr | NotFound String
+  deriving (Show)
 
 data Config = Config
   { cInfo :: Info,
