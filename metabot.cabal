@@ -27,7 +27,6 @@ library
   exposed-modules:
       Api
       ApiData
-      Config
       Config.Core
       Config.Data
       Core
