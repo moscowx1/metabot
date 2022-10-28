@@ -30,6 +30,7 @@ library
       Config.Core
       Config.Data
       Core
+      State
   other-modules:
       Paths_metabot
   hs-source-dirs:
