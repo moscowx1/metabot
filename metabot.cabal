@@ -30,6 +30,7 @@ library
       Config.Core
       Config.Data
       Core
+      Handle
       State
   other-modules:
       Paths_metabot

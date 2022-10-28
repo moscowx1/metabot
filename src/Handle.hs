@@ -1,18 +1,15 @@
-{-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module State where
+module Handle where
 
 import Config.Core (Config (cInitRC))
 import Config.Data (RepeatNum)
-import Control.Monad.Except (ExceptT)
-import Control.Monad.Reader (ReaderT, asks)
-import Control.Monad.State (MonadState (get), StateT, modify)
+import Control.Monad.Except (ExceptT, runExceptT)
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
+import Control.Monad.State (MonadState (get), StateT (runStateT), modify)
 import Data.Functor ((<&>))
 import Data.Maybe (fromMaybe)
 import Servant.Client (ClientEnv, ClientError)
-
-type Handle = ReaderT Config (StateT StateS (ExceptT ClientError IO)) -- Move??
 
 type ChatId = Int
 
@@ -34,3 +31,12 @@ data StateS = StateS
     sIdToRN :: [(ChatId, RepeatNum)],
     sEnv :: ClientEnv
   }
+
+type Handle = ReaderT Config (StateT StateS (ExceptT ClientError IO)) -- Move??
+
+runHandle ::
+  Config ->
+  StateS ->
+  Handle a ->
+  IO (Either ClientError (a, StateS))
+runHandle e st m = runExceptT $ runStateT (runReaderT m e) st
