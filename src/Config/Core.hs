@@ -5,6 +5,7 @@ module Config.Core (readConfigEither, Config (..)) where
 import Config.Data
   ( Info,
     ParseErr,
+    Parser,
     RepeatNum,
     Timeout,
     Token,
@@ -13,7 +14,11 @@ import Config.Data
     timeoutEither,
     tokenEither,
   )
-import Control.Monad.Reader (MonadReader (ask), ReaderT (ReaderT, runReaderT))
+import Control.Monad.Reader
+  ( ReaderT (runReaderT),
+    ask,
+    lift,
+  )
 import Data.Bifunctor (Bifunctor (first, second))
 import Data.Ini (Ini, lookupValue)
 import Data.Text (Text, unpack)
@@ -28,29 +33,24 @@ data Config = Config
   }
   deriving (Show, Eq)
 
-transferErr :: (String -> Either ParseErr a) -> (String -> Either ReadConfigErr a)
+transferErr :: Parser a -> (String -> Either ReadConfigErr a)
 transferErr f s = first ParseErr (f s)
 
-type Lookup = ReaderT (Text -> Either String String) (Either ReadConfigErr)
+type ConfigReader = ReaderT (Text -> Either String String) (Either ReadConfigErr)
 
 read' ::
-  t ->
-  (String -> Either ParseErr b) ->
-  ReaderT (t -> Either String String) (Either ReadConfigErr) b
-read' s f2 = ask >>= \e -> ReaderT $ const $ first NotFound (e s) >>= transferErr f2
+  Text ->
+  Parser a ->
+  ConfigReader a
+read' s f2 = ask >>= \e -> lift $ first NotFound (e s) >>= transferErr f2
 
-readConfig :: Lookup Config
-readConfig = do
-  info <- read' "info" infoEither
-  initRN <- read' "repeatNum" repeatNumEither
-  token <- read' "token" tokenEither
-  timeout <- read' "timeout" timeoutEither
-  pure $
-    Config
-      info
-      initRN
-      token
-      timeout
+readConfig :: ConfigReader Config
+readConfig =
+  Config
+    <$> read' "info" infoEither
+    <*> read' "repeatNum" repeatNumEither
+    <*> read' "token" tokenEither
+    <*> read' "timeout" timeoutEither
 
 readFn :: Ini -> Text -> Either String Text
 readFn = flip (lookupValue "Bot")
