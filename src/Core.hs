@@ -5,24 +5,18 @@ module Core () where
 
 import Api (getUpdates, sendMessage)
 import ApiData (Chat (chatId), Message (messageChat, messageText), Update (Update, updateId, updateMessage), Updates (result))
+import Config.Core (Config (Config, cInfo, cInitRC, cTimeout, cToken))
+import Config.Data (RepeatNum, unInfo)
 import Control.Exception (throw)
 import Control.Monad (forM_, forever)
 import Control.Monad.Except (Except, ExceptT (ExceptT), MonadTrans (lift), runExceptT)
 import Control.Monad.Trans.Except (except)
 import Control.Monad.Trans.Reader (ReaderT (ReaderT, runReaderT), ask, asks)
 import Control.Monad.Trans.State (StateT (StateT, runStateT), get, modify)
+import Data.List.NonEmpty (toList)
 import Network.HTTP.Client (newManager)
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Servant.Client (BaseUrl (BaseUrl), ClientEnv, ClientError, Scheme (Https), mkClientEnv, runClientM)
-
-data Config = Config
-  { configToken :: String,
-    configUrl :: BaseUrl,
-    configHost :: String,
-    configTimeout :: Int,
-    configDefRP :: Int,
-    configDescription :: String
-  }
 
 idMsg :: Update -> (Int, String)
 idMsg upd = (chat upd, msg upd)
@@ -38,11 +32,11 @@ runReq m = do
   returnReq $ runClientM m stateEnv
 
 sendMessage' chatId msg = do
-  Config {configToken} <- ask
-  runReq (sendMessage configToken chatId msg)
+  Config {cToken} <- ask
+  runReq (sendMessage cToken chatId msg)
 
-addRp :: Int -> Handle Int
-addRp id = asks configDefRP >>= \c -> lift (modify (mf c)) >> pure c
+addRp :: Int -> Handle RepeatNum
+addRp id = asks cInitRC >>= \c -> lift (modify (mf c)) >> pure c
   where
     mf c s@State {stateIdToCount} = s {stateIdToCount = (id, c) : stateIdToCount}
 
@@ -58,7 +52,7 @@ getOrAddRp id = do
 handleMessage (chatId, msg) = do
   case msg of
     "/help" -> do
-      info <- asks configDescription
+      info <- asks (toList . unInfo . cInfo)
       sendMessage' chatId info
       pure ()
     _ -> do
@@ -67,12 +61,12 @@ handleMessage (chatId, msg) = do
 
 getUpdates' :: Handle Updates
 getUpdates' = do
-  Config {configToken, configTimeout} <- ask
+  Config {cToken, cTimeout} <- ask
   State {stateOffset} <- lift get
   runReq
     ( getUpdates
-        configToken
-        configTimeout
+        cToken
+        cTimeout
         (Just stateOffset)
     )
 
@@ -94,33 +88,10 @@ type Handle = ReaderT Config (StateT State (ExceptT ClientError IO))
 
 data State = State
   { stateOffset :: Int,
-    stateIdToCount :: [(Int, Int)],
+    stateIdToCount :: [(Int, RepeatNum)],
     stateEnv :: ClientEnv
   }
 
 getState = State 0 []
 
-getConf :: Config
-getConf =
-  Config
-    { configToken = token,
-      configUrl = BaseUrl Https host 443 "",
-      configHost = host,
-      configTimeout = 1000,
-      configDefRP = 2,
-      configDescription = "echo bot"
-    }
-  where
-    host = "api.telegram.org"
-    token = "bot5758182558:AAHvdgfhit1CFDBWV5Paegja8m3n5RaYkDw"
-
 runHandle e st m = runExceptT $ runStateT (runReaderT m e) st
-
--- TODO:: next step -> add right offset (diff var)
-
-main = do
-  manager' <- newManager tlsManagerSettings
-  let conf = getConf
-  let env = mkClientEnv manager' (configUrl conf)
-  let st = getState env
-  forever $ runHandle conf st run''

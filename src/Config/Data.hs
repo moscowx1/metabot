@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Config.Data
-  ( Info,
+  ( Info (unInfo),
     infoEither,
     Token,
     tokenEither,
@@ -20,6 +20,8 @@ import Control.Monad.Except (Except, runExcept, throwError, when)
 import Control.Monad.Reader (MonadReader (ask), ReaderT (runReaderT))
 import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty, nonEmpty, toList)
+import Data.Text (Text, pack)
+import Servant.API (ToHttpApiData (toQueryParam, toUrlPiece))
 import Text.Read (readMaybe)
 
 type VarName = String
@@ -50,8 +52,11 @@ between min' max' v = do
   when (v > max') (throw' TooBig)
   pure v
 
+intToText :: Int -> Text
+intToText = pack . show
+
 newtype RepeatNum = RepeatNum {unRepeatNum :: Int}
-  deriving (Show, Eq)
+  deriving (Show, Eq, Enum, Num)
 
 repeatNum :: String -> Parser' RepeatNum
 repeatNum i =
@@ -81,6 +86,9 @@ infoEither = run "info" info
 newtype Token = Token {unToken :: NonEmpty Char}
   deriving (Show, Eq)
 
+instance ToHttpApiData Token where
+  toUrlPiece = pack . toList . unToken
+
 token :: String -> Parser' Token
 token v = nonEmpty' v <&> Token
 
@@ -89,6 +97,9 @@ tokenEither = run "token" token
 
 newtype Timeout = Timeout {unTimeout :: Int}
   deriving (Show, Eq)
+
+instance ToHttpApiData Timeout where
+  toQueryParam = intToText . unTimeout
 
 timeout :: String -> Parser' Timeout
 timeout v =

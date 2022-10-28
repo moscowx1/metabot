@@ -4,6 +4,7 @@
 module Api (sendMessage, getUpdates) where
 
 import ApiData (MessageResponse, Updates)
+import Config.Data (Timeout, Token)
 import Data.Proxy (Proxy (Proxy))
 import Servant.API
   ( Capture,
@@ -17,7 +18,7 @@ import Servant.API
   )
 import Servant.Client (ClientM, client)
 
-type WithToken = Capture "token" String
+type WithToken = Capture "token" Token
 
 type Api =
   WithToken :> SendMessage
@@ -31,7 +32,7 @@ type SendMessage =
 
 type GetUpdates =
   "getUpdates"
-    :> QueryParam' '[Required] "timeout" Int
+    :> QueryParam' '[Required] "timeout" Timeout
     :> QueryParam "offset" Int
     :> Get '[JSON] Updates
 
@@ -39,12 +40,12 @@ api :: Proxy Api
 api = Proxy
 
 getUpdates ::
-  String ->
-  Int ->
+  Token ->
+  Timeout ->
   Maybe Int ->
   ClientM Updates
 sendMessage ::
-  String ->
+  Token ->
   Int ->
   String ->
   ClientM MessageResponse
