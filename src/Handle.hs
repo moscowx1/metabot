@@ -1,6 +1,15 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Handle where
+module Handle
+  ( getOrAddRN,
+    stateS,
+    ChatId,
+    Offset,
+    Handle,
+    StateS (..),
+    runHandle,
+  )
+where
 
 import Config.Core (Config (cInitRC))
 import Config.Data (RepeatNum)
@@ -26,17 +35,21 @@ getOrAddRN chatId = do
   StateS {sIdToRN} <- get
   fromMaybe (addDefRN chatId) (lookup chatId sIdToRN <&> pure)
 
+stateS :: ClientEnv -> StateS
+stateS = StateS 0 []
+
 data StateS = StateS
   { sOffset :: Offset,
     sIdToRN :: [(ChatId, RepeatNum)],
     sEnv :: ClientEnv
   }
 
-type Handle = ReaderT Config (StateT StateS (ExceptT ClientError IO)) -- Move??
+type Handle = ReaderT Config (StateT StateS (ExceptT ClientError IO))
 
 runHandle ::
   Config ->
   StateS ->
   Handle a ->
   IO (Either ClientError (a, StateS))
-runHandle e st m = runExceptT $ runStateT (runReaderT m e) st
+runHandle e st m =
+  runExceptT $ runStateT (runReaderT m e) st

@@ -1,7 +1,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Core (Handle) where
+module Core (runer) where
 
 import Api (getUpdates, sendMessage)
 import ApiData
@@ -13,11 +13,12 @@ import ApiData
   )
 import Config.Core (Config (Config, cInfo, cTimeout, cToken))
 import Config.Data (unInfo)
-import Control.Monad (forM_, forever)
+import Control.Monad (forM_)
 import Control.Monad.Except (ExceptT (ExceptT), MonadTrans (lift))
 import Control.Monad.Reader (ask, asks)
 import Control.Monad.State (get, modify)
 import Data.List.NonEmpty (toList)
+import Debug.Trace (traceShow)
 import Handle (ChatId, Handle, StateS (StateS, sEnv, sOffset), getOrAddRN)
 import Servant.Client (ClientError, ClientM, runClientM)
 
@@ -54,19 +55,18 @@ getUpdates' :: Handle Updates
 getUpdates' = do
   Config {cToken, cTimeout} <- ask
   StateS {sOffset} <- lift get
-  runReq
-    ( getUpdates
-        cToken
-        cTimeout
-        (Just sOffset)
-    )
+  traceShow sOffset $
+    runReq
+      ( getUpdates
+          cToken
+          cTimeout
+          (Just sOffset)
+      )
 
 handleUpdate :: Update -> Handle ()
 handleUpdate u@Update {updateId} = handleMessage (idMsg u) >> mod'
   where
     mod' = lift $ modify (\s -> s {sOffset = updateId + 1})
 
-run :: Handle ()
-run = forever $ do
-  ups <- getUpdates'
-  forM_ (result ups) handleUpdate
+runer :: Handle ()
+runer = getUpdates' >>= mapM_ handleUpdate . result
