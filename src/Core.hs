@@ -55,13 +55,16 @@ getUpdates' :: Handle Updates
 getUpdates' = do
   Config {cToken, cTimeout} <- ask
   StateS {sOffset} <- lift get
-  traceShow sOffset $
+  res <-
     runReq
       ( getUpdates
           cToken
           cTimeout
           (Just sOffset)
       )
+  case result res of
+    [] -> getUpdates'
+    _ -> pure res
 
 handleUpdate :: Update -> Handle ()
 handleUpdate u@Update {updateId} = handleMessage (idMsg u) >> mod'
