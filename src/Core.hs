@@ -1,7 +1,6 @@
 module Core (getRuner) where
 
-import Config.Core (cInfo)
-import Config.Data (Mode (Telegram, Terminal), unInfo)
+import Config.Data (Config (..), Mode (Telegram, Terminal), unInfo)
 import Control.Monad (forever)
 import Control.Monad.Reader (asks)
 import Data.List.NonEmpty (toList)

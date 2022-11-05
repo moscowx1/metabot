@@ -1,6 +1,7 @@
 module Main (main) where
 
-import Config.Core (Config (cMode), readConfigEither)
+import Config.Data (Config (cMode))
+import Config.Reader (readConfigEither)
 import Control.Monad (forever)
 import Core (getRuner)
 import Data.Ini (readIniFile)

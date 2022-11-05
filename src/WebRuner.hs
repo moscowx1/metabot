@@ -10,8 +10,7 @@ import ApiData
     Update (updateId, updateMessage),
     Updates (result),
   )
-import Config.Core (Config (Config, cInfo, cTimeout, cToken))
-import Config.Data (unInfo)
+import Config.Data (Config (..), unInfo)
 import Control.Monad (forM_)
 import Control.Monad.Except (ExceptT (ExceptT), MonadTrans (lift))
 import Control.Monad.Reader (ask, asks)

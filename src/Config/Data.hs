@@ -3,94 +3,24 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Config.Data
-  ( Info (unInfo),
-    infoEither,
-    Token,
-    tokenEither,
-    Timeout,
-    timeoutEither,
-    RepeatNum,
-    repeatNumEither,
-    ParseErr,
-    Parser,
-    Mode(..),
-    modeEither
+  ( RepeatNum (..),
+    Info (..),
+    Token (..),
+    Timeout (..),
+    Mode (..),
+    Config (..),
   )
 where
 
-import Control.Monad.Except (ExceptT, MonadError (catchError, throwError), runExcept, when)
-import Control.Monad.Identity (Identity)
-import Control.Monad.Reader (MonadReader (ask), ReaderT (runReaderT))
-import Data.Functor ((<&>))
-import Data.List.NonEmpty (NonEmpty, nonEmpty, toList)
+import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Text (Text, pack)
 import Servant.API (ToHttpApiData (toQueryParam, toUrlPiece))
-import Text.Read (readMaybe)
-
-type VarName = String
-
-data ParseErr
-  = Empty VarName
-  | TooBig VarName
-  | TooSmall VarName
-  | NoParse VarName
-  deriving (Show, Eq)
-
-type Parser' = ReaderT VarName (ExceptT ParseErr Identity)
-
-type Parser a = String -> Either ParseErr a
-
-throw' :: (VarName -> ParseErr) -> Parser' a
-throw' ctor = ask >>= throwError . ctor
-
-nonEmpty' :: String -> Parser' (NonEmpty Char)
-nonEmpty' v = maybe (throw' Empty) pure (nonEmpty v)
-
-tryRead :: (Read a) => NonEmpty Char -> Parser' a
-tryRead x = maybe (throw' NoParse) pure (readMaybe $ toList x)
-
-exact :: String -> String -> Parser' String
-exact s i =
-  if s == i
-    then pure i
-    else throw' NoParse
-
-between :: Int -> Int -> Int -> Parser' Int
-between min' max' v = do
-  when (min' > v) (throw' TooSmall)
-  when (v > max') (throw' TooBig)
-  pure v
-
-intToText :: Int -> Text
-intToText = pack . show
 
 newtype RepeatNum = RepeatNum {unRepeatNum :: Int}
   deriving (Show, Eq, Enum, Num)
 
-repeatNum :: String -> Parser' RepeatNum
-repeatNum i =
-  nonEmpty' i
-    >>= tryRead
-    >>= between 1 5
-    <&> RepeatNum
-
-run ::
-  VarName ->
-  (String -> Parser' a) ->
-  Parser a
-run v p s = runExcept $ runReaderT (p s) v
-
-repeatNumEither :: Parser RepeatNum
-repeatNumEither = run "repeat number" repeatNum
-
 newtype Info = Info {unInfo :: NonEmpty Char}
   deriving (Show, Eq)
-
-info :: String -> Parser' Info
-info v = nonEmpty' v <&> Info
-
-infoEither :: Parser Info
-infoEither = run "info" info
 
 newtype Token = Token {unToken :: NonEmpty Char}
   deriving (Show, Eq)
@@ -98,14 +28,11 @@ newtype Token = Token {unToken :: NonEmpty Char}
 instance ToHttpApiData Token where
   toUrlPiece = pack . toList . unToken
 
-token :: String -> Parser' Token
-token v = nonEmpty' v <&> Token
-
-tokenEither :: Parser Token
-tokenEither = run "token" token
-
 newtype Timeout = Timeout {unTimeout :: Int}
   deriving (Show, Eq)
+
+intToText :: Int -> Text
+intToText = pack . show
 
 instance ToHttpApiData Timeout where
   toQueryParam = intToText . unTimeout
@@ -113,24 +40,11 @@ instance ToHttpApiData Timeout where
 data Mode = Telegram | Terminal
   deriving (Show, Eq)
 
-timeout :: String -> Parser' Timeout
-timeout v =
-  nonEmpty' v
-    >>= tryRead
-    >>= between 10 1000
-    <&> Timeout
-
-timeoutEither :: Parser Timeout
-timeoutEither = run "timeout" timeout
-
-telegram :: String -> Parser' Mode
-telegram s = exact "telegram" s >> pure Telegram
-
-terminal :: String -> Parser' Mode
-terminal s = exact "terminal" s >> pure Terminal
-
-mode :: String -> Parser' Mode
-mode s = terminal s `catchError` const (telegram s)
-
-modeEither :: Parser Mode
-modeEither = run "mode" mode
+data Config = Config
+  { cInfo :: Info,
+    cInitRC :: RepeatNum,
+    cToken :: Token,
+    cTimeout :: Timeout,
+    cMode :: Mode
+  }
+  deriving (Show, Eq)

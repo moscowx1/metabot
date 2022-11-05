@@ -27,8 +27,10 @@ library
   exposed-modules:
       Api
       ApiData
-      Config.Core
       Config.Data
+      Config.Parser
+      Config.ParserInternal
+      Config.Reader
       Core
       Env
       Handle

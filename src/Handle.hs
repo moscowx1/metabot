@@ -12,8 +12,7 @@ module Handle
   )
 where
 
-import Config.Core (Config (cInitRC))
-import Config.Data (RepeatNum)
+import Config.Data (Config (..), RepeatNum)
 import Control.Monad.Except (ExceptT, runExceptT)
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.State (MonadState (get), StateT (runStateT), modify)
