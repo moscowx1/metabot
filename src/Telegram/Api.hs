@@ -1,9 +1,8 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Api (sendMessage, getUpdates) where
+module Telegram.Api (sendMessage, getUpdates) where
 
-import ApiData (MessageResponse, Updates)
 import Config.Data (Timeout, Token)
 import Data.Proxy (Proxy (Proxy))
 import Servant.API
@@ -17,6 +16,7 @@ import Servant.API
     type (:>),
   )
 import Servant.Client (ClientM, client)
+import Telegram.Data (MessageResponse, Updates)
 
 type WithToken = Capture "token" Token
 

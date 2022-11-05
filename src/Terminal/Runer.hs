@@ -1,4 +1,4 @@
-module TerminalRuner (sender, geter) where
+module Terminal.Runer (sender, getter) where
 
 import Control.Monad.Cont (lift)
 import Data.Functor ((<&>))
@@ -10,8 +10,8 @@ lift' = lift . lift . lift
 sender :: TerminalMessage -> Handle ()
 sender = lift' . putStrLn . unTerminalMessage
 
-geter :: Handle [TerminalMessage]
-geter = lift' $ getLine <&> pure . TerminalMessage
+getter :: Handle [TerminalMessage]
+getter = lift' $ getLine <&> pure . TerminalMessage
 
 newtype TerminalMessage = TerminalMessage {unTerminalMessage :: String}
   deriving (Show)

@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module ApiData
+module Telegram.Data
   ( Updates (..),
     Update (..),
     MessageResponse (..),

@@ -1,12 +1,12 @@
-module Core (getRuner) where
+module Runer (getRuner) where
 
 import Config.Data (Config (..), Mode (Telegram, Terminal), unInfo)
 import Control.Monad (forever)
 import Control.Monad.Reader (asks)
 import Data.List.NonEmpty (toList)
 import Handle (Handle, IMessage (id', message, setMessage), getRN)
-import qualified TerminalRuner as T
-import qualified WebRuner as W
+import qualified Terminal.Runer as Telegram
+import qualified Terminal.Runer as Terminal
 
 send :: IMessage a => (a -> Handle ()) -> a -> Handle ()
 send sender msg = do
@@ -24,11 +24,11 @@ runer getter sender = forever $ do
   mapM_ (send sender) resp
 
 terminalRuner :: Handle ()
-terminalRuner = runer T.geter T.sender
+terminalRuner = runer Terminal.getter Terminal.sender
 
-webRuner :: Handle ()
-webRuner = runer W.getter W.sender
+telegramRuner :: Handle ()
+telegramRuner = runer Telegram.getter Telegram.sender
 
 getRuner :: Mode -> Handle ()
-getRuner Telegram = webRuner
+getRuner Telegram = telegramRuner
 getRuner Terminal = terminalRuner

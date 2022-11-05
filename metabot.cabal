@@ -25,17 +25,17 @@ source-repository head
 
 library
   exposed-modules:
-      Api
-      ApiData
       Config.Data
       Config.Parser
       Config.ParserInternal
       Config.Reader
-      Core
       Env
       Handle
-      TerminalRuner
-      WebRuner
+      Runer
+      Telegram.Api
+      Telegram.Data
+      Telegram.Runer
+      Terminal.Runer
   other-modules:
       Paths_metabot
   hs-source-dirs:
