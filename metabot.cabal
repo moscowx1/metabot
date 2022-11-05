@@ -32,6 +32,8 @@ library
       Core
       Env
       Handle
+      TerminalRuner
+      WebRuner
   other-modules:
       Paths_metabot
   hs-source-dirs:

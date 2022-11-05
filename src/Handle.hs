@@ -1,13 +1,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Handle
-  ( getOrAddRN,
+  ( getRN,
     stateS,
     ChatId,
     Offset,
     Handle,
     StateS (..),
     runHandle,
+    IMessage (..),
   )
 where
 
@@ -30,8 +31,8 @@ addDefRN chatId = do
   modify (\s@StateS {sIdToRN} -> s {sIdToRN = (chatId, defRN) : sIdToRN})
   pure defRN
 
-getOrAddRN :: ChatId -> Handle RepeatNum
-getOrAddRN chatId = do
+getRN :: ChatId -> Handle RepeatNum
+getRN chatId = do
   StateS {sIdToRN} <- get
   fromMaybe (addDefRN chatId) (lookup chatId sIdToRN <&> pure)
 
@@ -45,6 +46,11 @@ data StateS = StateS
   }
 
 type Handle = ReaderT Config (StateT StateS (ExceptT ClientError IO))
+
+class IMessage a where
+  message :: a -> String
+  id' :: a -> ChatId
+  setMessage :: a -> String -> a
 
 runHandle ::
   Config ->

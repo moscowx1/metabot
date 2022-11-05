@@ -1,75 +1,35 @@
-{-# LANGUAGE BlockArguments #-}
-{-# LANGUAGE NamedFieldPuns #-}
+module Core (getRuner) where
 
-module Core (runer) where
-
-import Api (getUpdates, sendMessage)
-import ApiData
-  ( Chat (chatId),
-    Message (messageChat, messageText),
-    MessageResponse,
-    Update (Update, updateId, updateMessage),
-    Updates (result),
-  )
-import Config.Core (Config (Config, cInfo, cTimeout, cToken))
-import Config.Data (unInfo)
-import Control.Monad (forM_)
-import Control.Monad.Except (ExceptT (ExceptT), MonadTrans (lift))
-import Control.Monad.Reader (ask, asks)
-import Control.Monad.State (get, modify)
+import Config.Core (cInfo)
+import Config.Data (Mode (Telegram, Terminal), unInfo)
+import Control.Monad (forever)
+import Control.Monad.Reader (asks)
 import Data.List.NonEmpty (toList)
-import Debug.Trace (traceShow)
-import Handle (ChatId, Handle, StateS (StateS, sEnv, sOffset), getOrAddRN)
-import Servant.Client (ClientError, ClientM, runClientM)
+import Handle (Handle, IMessage (id', message, setMessage), getRN)
+import qualified TerminalRuner as T
+import qualified WebRuner as W
 
-idMsg :: Update -> (Int, String)
-idMsg upd = (chat upd, msg upd)
-  where
-    chat = chatId . messageChat . updateMessage
-    msg = messageText . updateMessage
-
-returnReq :: IO (Either ClientError a) -> Handle a
-returnReq = lift . lift . ExceptT
-
-runReq :: ClientM b -> Handle b
-runReq m = do
-  StateS {sEnv} <- lift get
-  returnReq $ runClientM m sEnv
-
-sendMessage' :: ChatId -> String -> Handle MessageResponse
-sendMessage' chatId msg = do
-  Config {cToken} <- ask
-  runReq (sendMessage cToken chatId msg)
-
-handleMessage :: (ChatId, String) -> Handle ()
-handleMessage (chatId, msg) = do
-  case msg of
+send :: IMessage a => (a -> Handle ()) -> a -> Handle ()
+send sender msg = do
+  case message msg of
     "/help" -> do
       info <- asks (toList . unInfo . cInfo)
-      sendMessage' chatId info >> pure ()
+      sender (setMessage msg info)
     _ -> do
-      c <- getOrAddRN chatId
-      forM_ [1 .. c] (const $ sendMessage' chatId msg)
+      rn <- getRN (id' msg)
+      mapM_ (const $ sender msg) [1 .. rn]
 
-getUpdates' :: Handle Updates
-getUpdates' = do
-  Config {cToken, cTimeout} <- ask
-  StateS {sOffset} <- lift get
-  res <-
-    runReq
-      ( getUpdates
-          cToken
-          cTimeout
-          (Just sOffset)
-      )
-  case result res of
-    [] -> getUpdates'
-    _ -> pure res
+runer :: IMessage m => Handle [m] -> (m -> Handle ()) -> Handle ()
+runer getter sender = forever $ do
+  resp <- getter
+  mapM_ (send sender) resp
 
-handleUpdate :: Update -> Handle ()
-handleUpdate u@Update {updateId} = handleMessage (idMsg u) >> mod'
-  where
-    mod' = lift $ modify (\s -> s {sOffset = updateId + 1})
+terminalRuner :: Handle ()
+terminalRuner = runer T.geter T.sender
 
-runer :: Handle ()
-runer = getUpdates' >>= mapM_ handleUpdate . result
+webRuner :: Handle ()
+webRuner = runer W.getter W.sender
+
+getRuner :: Mode -> Handle ()
+getRuner Telegram = webRuner
+getRuner Terminal = terminalRuner

@@ -1,8 +1,8 @@
 module Main (main) where
 
-import Config.Core (readConfigEither)
+import Config.Core (Config (cMode), readConfigEither)
 import Control.Monad (forever)
-import Core (runer)
+import Core (getRuner)
 import Data.Ini (readIniFile)
 import Env (env)
 import Handle (runHandle, stateS)
@@ -19,8 +19,5 @@ main = do
   ini <- lt $ readIniFile "config.ini"
   config <- lt $ pure $ readConfigEither ini
   e <- env
-  runHandle
-    config
-    (stateS e)
-    (forever runer)
-    >> pure ()
+  let r = getRuner (cMode config)
+  runHandle config (stateS e) (forever r) >> pure ()

@@ -13,10 +13,13 @@ module Config.Data
     repeatNumEither,
     ParseErr,
     Parser,
+    Mode(..),
+    modeEither
   )
 where
 
-import Control.Monad.Except (Except, runExcept, throwError, when)
+import Control.Monad.Except (ExceptT, MonadError (catchError, throwError), runExcept, when)
+import Control.Monad.Identity (Identity)
 import Control.Monad.Reader (MonadReader (ask), ReaderT (runReaderT))
 import Data.Functor ((<&>))
 import Data.List.NonEmpty (NonEmpty, nonEmpty, toList)
@@ -33,7 +36,7 @@ data ParseErr
   | NoParse VarName
   deriving (Show, Eq)
 
-type Parser' = ReaderT VarName (Except ParseErr)
+type Parser' = ReaderT VarName (ExceptT ParseErr Identity)
 
 type Parser a = String -> Either ParseErr a
 
@@ -45,6 +48,12 @@ nonEmpty' v = maybe (throw' Empty) pure (nonEmpty v)
 
 tryRead :: (Read a) => NonEmpty Char -> Parser' a
 tryRead x = maybe (throw' NoParse) pure (readMaybe $ toList x)
+
+exact :: String -> String -> Parser' String
+exact s i =
+  if s == i
+    then pure i
+    else throw' NoParse
 
 between :: Int -> Int -> Int -> Parser' Int
 between min' max' v = do
@@ -101,6 +110,9 @@ newtype Timeout = Timeout {unTimeout :: Int}
 instance ToHttpApiData Timeout where
   toQueryParam = intToText . unTimeout
 
+data Mode = Telegram | Terminal
+  deriving (Show, Eq)
+
 timeout :: String -> Parser' Timeout
 timeout v =
   nonEmpty' v
@@ -110,3 +122,15 @@ timeout v =
 
 timeoutEither :: Parser Timeout
 timeoutEither = run "timeout" timeout
+
+telegram :: String -> Parser' Mode
+telegram s = exact "telegram" s >> pure Telegram
+
+terminal :: String -> Parser' Mode
+terminal s = exact "terminal" s >> pure Terminal
+
+mode :: String -> Parser' Mode
+mode s = terminal s `catchError` const (telegram s)
+
+modeEither :: Parser Mode
+modeEither = run "mode" mode

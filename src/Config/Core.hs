@@ -9,12 +9,14 @@ where
 
 import Config.Data
   ( Info,
+    Mode,
     ParseErr,
     Parser,
     RepeatNum,
     Timeout,
     Token,
     infoEither,
+    modeEither,
     repeatNumEither,
     timeoutEither,
     tokenEither,
@@ -35,7 +37,8 @@ data Config = Config
   { cInfo :: Info,
     cInitRC :: RepeatNum,
     cToken :: Token,
-    cTimeout :: Timeout
+    cTimeout :: Timeout,
+    cMode :: Mode
   }
   deriving (Show, Eq)
 
@@ -57,6 +60,7 @@ readConfig =
     <*> read' "repeatNum" repeatNumEither
     <*> read' "token" tokenEither
     <*> read' "timeout" timeoutEither
+    <*> read' "mode" modeEither
 
 readFn :: Ini -> Text -> Either String Text
 readFn = flip (lookupValue "Bot")

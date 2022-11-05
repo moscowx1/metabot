@@ -15,6 +15,7 @@ import Control.Applicative ((<|>))
 import Control.Monad (mzero)
 import Data.Aeson (FromJSON (parseJSON), Value (Object), (.:))
 import GHC.Generics (Generic)
+import Handle (IMessage (id', message, setMessage))
 
 data Updates = Updates
   { ok :: Bool,
@@ -36,6 +37,11 @@ instance FromJSON Update where
       <*> update
       .: "message"
   parseJSON _ = mzero
+
+instance IMessage Update where
+  id' = messageId . updateMessage
+  message = messageText . updateMessage
+  setMessage u@(Update _ m) msg = u {updateMessage = m {messageText = msg}}
 
 data Message = Message
   { messageId :: Int,
