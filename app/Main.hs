@@ -1,12 +1,8 @@
 module Main (main) where
 
-import Config.Data (Config (cMode))
 import Config.Reader (readConfigEither)
-import Control.Monad (forever)
 import Data.Ini (readIniFile)
-import Env (env)
-import Handle (runHandle, stateS)
-import Runer (getRuner)
+import Runer (run)
 
 lt :: (Show a) => IO (Either a b) -> IO b
 lt m = do
@@ -19,6 +15,4 @@ main :: IO ()
 main = do
   ini <- lt $ readIniFile "config.ini"
   config <- lt $ pure $ readConfigEither ini
-  e <- env
-  let r = getRuner (cMode config)
-  runHandle config (stateS e) (forever r) >> pure ()
+  run config

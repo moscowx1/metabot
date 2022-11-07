@@ -1,42 +1,68 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE NamedFieldPuns #-}
 
-module Telegram.Runer (sender, getter) where
+module Telegram.Runer (getter, mapper) where
 
-import Config.Data (Config (..))
+import Config.Data (Config (..), RepeatNum)
 import Control.Monad.Except (ExceptT (ExceptT), MonadTrans (lift))
+import Control.Monad.RWS (asks, modify)
 import Control.Monad.Reader (ask)
-import Control.Monad.State (get, modify)
-import Handle (Handle, StateS (..))
+import Control.Monad.State (get)
+import Handle (Handle)
 import Servant.Client (ClientError, ClientM, runClientM)
 import Telegram.Api (getUpdates, sendMessage)
 import Telegram.Data (Chat (..), Message (..), Update (..), Updates (result))
+import Telegram.State (TelegramSt (..))
 
-returnReq :: IO (Either ClientError a) -> Handle a
+type TelegramHandle = Handle TelegramSt
+
+returnReq :: IO (Either ClientError a) -> TelegramHandle a
 returnReq = lift . lift . ExceptT
 
-runReq :: ClientM b -> Handle b
+runReq :: ClientM b -> TelegramHandle b
 runReq m = do
-  StateS {sEnv} <- lift get
-  returnReq $ runClientM m sEnv
+  TelegramSt {tEnv} <- lift get
+  returnReq $ runClientM m tEnv
 
-sender :: Update -> Handle ()
-sender up = do
+sendMsg :: Int -> String -> TelegramHandle ()
+sendMsg id' msg = do
   Config {cToken} <- ask
-  let id' = chatId $ messageChat $ updateMessage up
-  let msg = messageText $ updateMessage up
-  let uId = updateId up
-  _ <- runReq (sendMessage cToken id' msg)
-  lift $ modify (\s -> s {sOffset = uId + 1})
+  runReq (sendMessage cToken id' msg) >> pure ()
 
-getter :: Handle [Update]
+updateOffset :: Update -> TelegramHandle ()
+updateOffset up = do
+  let uId = updateId up
+  lift $ modify (\s -> s {tOffset = uId + 1})
+
+getRn :: Update -> TelegramHandle RepeatNum
+getRn up = do
+  TelegramSt {tIdToRN} <- get
+  let id' = chatId $ messageChat $ updateMessage up
+  case lookup id' tIdToRN of
+    Just x -> pure x
+    Nothing -> do
+      k <- asks cInitRC
+      lift $ modify (\s -> s {tIdToRN = (id', k) : tIdToRN})
+      pure k
+
+type Sender = String -> TelegramHandle ()
+
+type OnMessageSend = TelegramHandle ()
+
+mapper :: Update -> TelegramHandle (String, Sender, RepeatNum, OnMessageSend)
+mapper up = do
+  let id' = chatId $ messageChat $ updateMessage up
+  rn <- getRn up
+  pure (messageText $ updateMessage up, sendMsg id', rn, updateOffset up)
+
+getter :: TelegramHandle [Update]
 getter = do
   Config {cToken, cTimeout} <- ask
-  StateS {sOffset} <- lift get
+  TelegramSt {tOffset} <- lift get
   runReq
     ( result
         <$> getUpdates
           cToken
           cTimeout
-          (Just sOffset)
+          (Just tOffset)
     )

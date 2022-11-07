@@ -1,22 +1,33 @@
-module Terminal.Runer (sender, getter) where
+module Terminal.Runer (getter, TerminalHandle, mapper) where
 
+import Config.Data (RepeatNum)
 import Control.Monad.Cont (lift)
+import Control.Monad.State (get)
 import Data.Functor ((<&>))
-import Handle (Handle, IMessage (id', message, setMessage))
+import Handle (Handle)
 
-lift' :: IO a -> Handle a
+lift' :: IO a -> TerminalHandle a
 lift' = lift . lift . lift
 
-sender :: TerminalMessage -> Handle ()
-sender = lift' . putStrLn . unTerminalMessage
+sender :: String -> TerminalHandle ()
+sender = lift' . putStrLn
 
-getter :: Handle [TerminalMessage]
+getter :: TerminalHandle [TerminalMessage]
 getter = lift' $ getLine <&> pure . TerminalMessage
+
+mapper ::
+  TerminalMessage ->
+  TerminalHandle
+    ( String,
+      String -> TerminalHandle (),
+      RepeatNum,
+      TerminalHandle ()
+    )
+mapper (TerminalMessage msg) = do
+  rn <- get
+  pure (msg, sender, rn, pure ())
 
 newtype TerminalMessage = TerminalMessage {unTerminalMessage :: String}
   deriving (Show)
 
-instance IMessage TerminalMessage where
-  id' = const 1
-  message = unTerminalMessage
-  setMessage _ = TerminalMessage
+type TerminalHandle = Handle RepeatNum

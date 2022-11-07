@@ -1,34 +1,56 @@
-module Runer (getRuner) where
+{-# LANGUAGE FlexibleContexts #-}
 
-import Config.Data (Config (..), Mode (Telegram, Terminal), unInfo)
-import Control.Monad (forever)
-import Control.Monad.Reader (asks)
+module Runer (run) where
+
+import Config.Data (Config (..), Mode (..), RepeatNum, unInfo)
+import Control.Monad (forever, (>=>))
+import Control.Monad.Except (ExceptT (ExceptT))
+import Control.Monad.Reader (ReaderT (runReaderT), asks)
+import Control.Monad.State (StateT (runStateT))
 import Data.List.NonEmpty (toList)
-import Handle (Handle, IMessage (id', message, setMessage), getRN)
-import qualified Terminal.Runer as Telegram
+import Handle (Handle)
+import qualified Telegram.Runer as Telegram
+import Telegram.State (TelegramSt, telegramState)
 import qualified Terminal.Runer as Terminal
 
-send :: IMessage a => (a -> Handle ()) -> a -> Handle ()
-send sender msg = do
-  case message msg of
+handleMsg :: String -> (String -> Handle st ()) -> RepeatNum -> Handle st ()
+handleMsg msg sender rn = do
+  case msg of
     "/help" -> do
       info <- asks (toList . unInfo . cInfo)
-      sender (setMessage msg info)
+      sender info
     _ -> do
-      rn <- getRN (id' msg)
-      mapM_ (const $ sender msg) [1 .. rn]
+      mapM_ (const (sender msg)) [1 .. rn]
 
-runer :: IMessage m => Handle [m] -> (m -> Handle ()) -> Handle ()
-runer getter sender = forever $ do
-  resp <- getter
-  mapM_ (send sender) resp
+handle :: (String, String -> Handle st (), RepeatNum, Handle st ()) -> Handle st ()
+handle (msg, sender, rn, onSent) = do
+  handleMsg msg sender rn >> onSent
 
-terminalRuner :: Handle ()
-terminalRuner = runer Terminal.getter Terminal.sender
+runer :: Handle st [m] -> (m -> Handle st (String, String -> Handle st (), RepeatNum, Handle st ())) -> Handle st ()
+runer getter mapper = do
+  ups <- getter
+  mapM_ (mapper >=> handle) ups
 
-telegramRuner :: Handle ()
-telegramRuner = runer Telegram.getter Telegram.sender
+telegramRuner :: Handle TelegramSt ()
+telegramRuner = runer Telegram.getter Telegram.mapper
 
-getRuner :: Mode -> Handle ()
-getRuner Telegram = telegramRuner
-getRuner Terminal = terminalRuner
+terminalRuner :: Handle RepeatNum ()
+terminalRuner = runer Terminal.getter Terminal.mapper
+
+runExcept' :: Monad m => ExceptT e m a -> m ()
+runExcept' (ExceptT t) = t >> pure ()
+
+run :: Config -> IO ()
+run config = do
+  let c = cMode config
+  case c of
+    Terminal -> do
+      let st = cInitRC config
+      runExcept' $
+        runStateT (runReaderT (forever terminalRuner) config) st
+    Telegram -> do
+      st <- telegramState
+      runExcept' $
+        runStateT
+          (runReaderT (forever telegramRuner) config)
+          st

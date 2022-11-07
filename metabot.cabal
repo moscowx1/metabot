@@ -29,12 +29,12 @@ library
       Config.Parser
       Config.ParserInternal
       Config.Reader
-      Env
       Handle
       Runer
       Telegram.Api
       Telegram.Data
       Telegram.Runer
+      Telegram.State
       Terminal.Runer
   other-modules:
       Paths_metabot
