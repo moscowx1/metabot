@@ -1,4 +1,4 @@
-module ParserInternal where
+module ParserInternal (spec) where
 
 import Config.ParserInternal
   ( ParseErr (Empty, NoParse, TooBig, TooSmall),
