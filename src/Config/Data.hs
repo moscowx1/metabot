@@ -9,6 +9,7 @@ module Config.Data
     Timeout (..),
     Mode (..),
     Config (..),
+    HasInfo (..),
   )
 where
 
@@ -21,6 +22,12 @@ newtype RepeatNum = RepeatNum {unRepeatNum :: Int}
 
 newtype Info = Info {unInfo :: NonEmpty Char}
   deriving (Show, Eq)
+
+class HasInfo a where
+  getInfo :: a -> String
+
+instance HasInfo Info where
+  getInfo = toList . unInfo
 
 newtype Token = Token {unToken :: NonEmpty Char}
   deriving (Show, Eq)

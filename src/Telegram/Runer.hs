@@ -3,7 +3,7 @@
 
 module Telegram.Runer (getter, mapper) where
 
-import Config.Data (Config (..), RepeatNum)
+import Config.Data (RepeatNum)
 import Control.Monad.Except (ExceptT (ExceptT), MonadTrans (lift))
 import Control.Monad.RWS (asks, modify)
 import Control.Monad.Reader (ask)
@@ -12,22 +12,23 @@ import Handle (Handle)
 import Servant.Client (ClientError, ClientM, runClientM)
 import Telegram.Api (getUpdates, sendMessage)
 import Telegram.Data (Chat (..), Message (..), Update (..), Updates (result))
+import Telegram.Env (TelegramEnv (TelegramEnv, tEnv, tInitRN, tTimeout, tToken))
 import Telegram.State (TelegramSt (..))
 
-type TelegramHandle = Handle TelegramSt
+type TelegramHandle = Handle TelegramEnv TelegramSt
 
 returnReq :: IO (Either ClientError a) -> TelegramHandle a
 returnReq = lift . lift . ExceptT
 
 runReq :: ClientM b -> TelegramHandle b
 runReq m = do
-  TelegramSt {tEnv} <- lift get
-  returnReq $ runClientM m tEnv
+  e <- asks tEnv
+  returnReq $ runClientM m e
 
 sendMsg :: Int -> String -> TelegramHandle ()
 sendMsg id' msg = do
-  Config {cToken} <- ask
-  runReq (sendMessage cToken id' msg) >> pure ()
+  token <- asks tToken
+  runReq (sendMessage token id' msg) >> pure ()
 
 updateOffset :: Update -> TelegramHandle ()
 updateOffset up = do
@@ -41,9 +42,9 @@ getRn up = do
   case lookup id' tIdToRN of
     Just x -> pure x
     Nothing -> do
-      k <- asks cInitRC
-      lift $ modify (\s -> s {tIdToRN = (id', k) : tIdToRN})
-      pure k
+      rn <- asks tInitRN
+      lift $ modify (\s -> s {tIdToRN = (id', rn) : tIdToRN})
+      pure rn
 
 type Sender = String -> TelegramHandle ()
 
@@ -57,12 +58,12 @@ mapper up = do
 
 getter :: TelegramHandle [Update]
 getter = do
-  Config {cToken, cTimeout} <- ask
+  TelegramEnv {tToken, tTimeout} <- ask
   TelegramSt {tOffset} <- lift get
   runReq
     ( result
         <$> getUpdates
-          cToken
-          cTimeout
+          tToken
+          tTimeout
           (Just tOffset)
     )

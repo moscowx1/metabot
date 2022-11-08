@@ -1,40 +1,41 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Runer (run) where
 
-import Config.Data (Config (..), Mode (..), RepeatNum, unInfo)
+import Config.Data (Config (..), HasInfo (..), Info, Mode (..), RepeatNum)
 import Control.Monad (forever, (>=>))
 import Control.Monad.Except (ExceptT (ExceptT))
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.State (StateT (runStateT))
-import Data.List.NonEmpty (toList)
 import Handle (Handle)
+import Telegram.Env (TelegramEnv, telegramEnv)
 import qualified Telegram.Runer as Telegram
 import Telegram.State (TelegramSt, telegramState)
 import qualified Terminal.Runer as Terminal
 
-handleMsg :: String -> (String -> Handle st ()) -> RepeatNum -> Handle st ()
+handleMsg :: (HasInfo e) => String -> (String -> Handle e st ()) -> RepeatNum -> Handle e st ()
 handleMsg msg sender rn = do
   case msg of
     "/help" -> do
-      info <- asks (toList . unInfo . cInfo)
+      info <- asks getInfo
       sender info
     _ -> do
       mapM_ (const (sender msg)) [1 .. rn]
 
-handle :: (String, String -> Handle st (), RepeatNum, Handle st ()) -> Handle st ()
+handle :: HasInfo e => (String, String -> Handle e st (), RepeatNum, Handle e st ()) -> Handle e st ()
 handle (msg, sender, rn, onSent) = do
   handleMsg msg sender rn >> onSent
 
-runer :: Handle st [m] -> (m -> Handle st (String, String -> Handle st (), RepeatNum, Handle st ())) -> Handle st ()
+runer :: HasInfo e => Handle e st [m] -> (m -> Handle e st (String, String -> Handle e st (), RepeatNum, Handle e st ())) -> Handle e st ()
 runer getter mapper = do
   ups <- getter
   mapM_ (mapper >=> handle) ups
 
-telegramRuner :: Handle TelegramSt ()
+telegramRuner :: Handle TelegramEnv TelegramSt ()
 telegramRuner = runer Telegram.getter Telegram.mapper
 
-terminalRuner :: Handle RepeatNum ()
+terminalRuner :: Handle Info RepeatNum ()
 terminalRuner = runer Terminal.getter Terminal.mapper
 
 runExcept' :: Monad m => ExceptT e m a -> m ()
@@ -45,12 +46,12 @@ run config = do
   let c = cMode config
   case c of
     Terminal -> do
-      let st = cInitRC config
+      let Config {cInitRC, cInfo} = config
       runExcept' $
-        runStateT (runReaderT (forever terminalRuner) config) st
+        runStateT (runReaderT (forever terminalRuner) cInfo) cInitRC
     Telegram -> do
-      st <- telegramState
+      env <- telegramEnv config
       runExcept' $
         runStateT
-          (runReaderT (forever telegramRuner) config)
-          st
+          (runReaderT (forever telegramRuner) env)
+          telegramState

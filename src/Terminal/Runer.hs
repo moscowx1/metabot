@@ -1,6 +1,6 @@
 module Terminal.Runer (getter, TerminalHandle, mapper) where
 
-import Config.Data (RepeatNum)
+import Config.Data (Info, RepeatNum)
 import Control.Monad.Cont (lift)
 import Control.Monad.State (get)
 import Data.Functor ((<&>))
@@ -30,4 +30,4 @@ mapper (TerminalMessage msg) = do
 newtype TerminalMessage = TerminalMessage {unTerminalMessage :: String}
   deriving (Show)
 
-type TerminalHandle = Handle RepeatNum
+type TerminalHandle = Handle Info RepeatNum

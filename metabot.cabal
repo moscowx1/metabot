@@ -33,6 +33,7 @@ library
       Runer
       Telegram.Api
       Telegram.Data
+      Telegram.Env
       Telegram.Runer
       Telegram.State
       Terminal.Runer
