@@ -1,4 +1,17 @@
-module Config.ParserInternal where
+module Config.ParserInternal
+  ( ParseErr (..),
+    Parser,
+    Parser',
+    between,
+    exact,
+    nonEmpty',
+    or',
+    run,
+    tryRead,
+    shouldBeLess,
+    shoudlBeMore,
+  )
+where
 
 import Control.Monad.Except (ExceptT, MonadError (catchError, throwError), runExcept)
 import Control.Monad.Identity (Identity)
@@ -36,21 +49,22 @@ exact s i =
 
 shouldBeLess :: Ord a => a -> a -> Parser' a
 shouldBeLess l v =
-  if l > v
-    then throw' TooSmall
+  if v > l
+    then throw' TooBig
     else pure v
 
 shoudlBeMore :: Ord a => a -> a -> Parser' a
 shoudlBeMore m v =
-  if v > m
-    then throw' TooBig
+  if m > v
+    then throw' TooSmall
     else pure v
 
-between :: Int -> Int -> Int -> Parser' Int
-between min' max' v = shouldBeLess min' v >> shoudlBeMore max' v
+between :: Ord a => a -> a -> a -> Parser' a
+between min' max' v = shouldBeLess max' v >> shoudlBeMore min' v
 
 or' :: Parser' a -> Parser' a -> Parser' a
 or' p1 p2 = p1 `catchError` const p2
+
 
 run ::
   VarName ->
