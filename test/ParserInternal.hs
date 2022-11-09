@@ -21,6 +21,7 @@ spec = do
   specNonEmpty
   specExact
   specLess
+  specMore
   specBetweeen
   specOr
 
