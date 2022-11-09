@@ -5,7 +5,7 @@ module Runer (run) where
 
 import Config.Data (Config (..), HasInfo (..), Info, Mode (..), RepeatNum)
 import Control.Monad (forever, (>=>))
-import Control.Monad.Except (ExceptT (ExceptT))
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Reader (ReaderT (runReaderT), asks)
 import Control.Monad.State (StateT (runStateT))
 import Handle (Handle)
@@ -38,8 +38,8 @@ telegramRuner = runer Telegram.getter Telegram.mapper
 terminalRuner :: Handle Info RepeatNum ()
 terminalRuner = runer Terminal.getter Terminal.mapper
 
-runExcept' :: Monad m => ExceptT e m a -> m ()
-runExcept' (ExceptT t) = t >> pure ()
+runRuner :: Handle e st () -> e -> st -> IO ()
+runRuner r e st = runExceptT (runStateT (runReaderT (forever r) e) st) >> pure ()
 
 run :: Config -> IO ()
 run config = do
@@ -47,11 +47,7 @@ run config = do
   case c of
     Terminal -> do
       let Config {cInitRC, cInfo} = config
-      runExcept' $
-        runStateT (runReaderT (forever terminalRuner) cInfo) cInitRC
+      runRuner terminalRuner cInfo cInitRC
     Telegram -> do
       env <- telegramEnv config
-      runExcept' $
-        runStateT
-          (runReaderT (forever telegramRuner) env)
-          telegramState
+      runRuner telegramRuner env telegramState
